@@ -51,6 +51,87 @@ def two_opt(solution):
     return new
 
 
+# ─── Hill Climbing Best ───────────────────────────────────────────────────────
+
+def hill_climbing_best(distance_matrix, neighborhood, max_iter=1000):
+    n = len(distance_matrix)
+    current = random_solution(n)
+    current_cost = get_total_distance(distance_matrix, current)
+    tested = explored = 0
+
+    for _ in range(max_iter):
+        neighbor = neighborhood(current)
+        tested += 1
+        neighbor_cost = get_total_distance(distance_matrix, neighbor)
+        if neighbor_cost < current_cost:
+            current, current_cost = neighbor, neighbor_cost
+            explored += 1
+
+    return current, current_cost, tested, explored
+
+
+# ─── Hill Climbing First ──────────────────────────────────────────────────────
+
+def hill_climbing_first(distance_matrix, neighborhood, max_iter=1000):
+    n = len(distance_matrix)
+    current = random_solution(n)
+    current_cost = get_total_distance(distance_matrix, current)
+    tested = explored = 0
+
+    for _ in range(max_iter):
+        improved = False
+        for _ in range(n * 2):
+            neighbor = neighborhood(current)
+            tested += 1
+            neighbor_cost = get_total_distance(distance_matrix, neighbor)
+            if neighbor_cost < current_cost:
+                current, current_cost = neighbor[:], neighbor_cost
+                explored += 1
+                improved = True
+                break
+        if not improved:
+            break
+
+    return current, current_cost, tested, explored
+
+
+# ─── Multi-Start Hill Climbing ────────────────────────────────────────────────
+
+def multi_start_hill_climbing(distance_matrix, neighborhood, hc_func, num_restarts=10, max_iter=1000):
+    best_solution, best_cost = None, float('inf')
+    total_tested = total_explored = 0
+
+    for _ in range(num_restarts):
+        solution, cost, tested, explored = hc_func(distance_matrix, neighborhood, max_iter=max_iter)
+        total_tested += tested
+        total_explored += explored
+        if cost < best_cost:
+            best_solution, best_cost = solution, cost
+
+    return best_solution, best_cost, total_tested, total_explored
+
+
+# ─── Simulated Annealing ──────────────────────────────────────────────────────
+
+def simulated_annealing(distance_matrix, neighborhood, max_iter=1000, initial_temp=1000, cooling_rate=0.99):
+    n = len(distance_matrix)
+    current = random_solution(n)
+    current_cost = get_total_distance(distance_matrix, current)
+    temp = initial_temp
+    tested = explored = 0
+
+    for _ in range(max_iter):
+        neighbor = neighborhood(current)
+        tested += 1
+        neighbor_cost = get_total_distance(distance_matrix, neighbor)
+        delta = neighbor_cost - current_cost
+        if delta < 0 or random.random() < math.exp(-delta / temp):
+            current, current_cost = neighbor, neighbor_cost
+            explored += 1
+        temp *= cooling_rate
+
+    return current, current_cost, tested, explored
+
 
 # ─── Tabu Search ──────────────────────────────────────────────────────────────
 
